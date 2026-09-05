@@ -2,43 +2,329 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>CamboKB Store</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    :root {
+      --bg-color: var(--tg-theme-bg-color, #0f172a);
+      --card-bg: var(--tg-theme-secondary-bg-color, #1e293b);
+      --text-main: var(--tg-theme-text-color, #f8fafc);
+      --text-muted: var(--tg-theme-hint-color, #94a3b8);
+      --accent: var(--tg-theme-button-color, #38bdf8);
+      --accent-hover: #0284c7;
+      --accent-glow: rgba(56, 189, 248, 0.25);
+      --badge-bg: rgba(56, 189, 248, 0.12);
+      --badge-border: rgba(56, 189, 248, 0.3);
+      --border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
       margin: 0;
-      padding: 16px;
-      background: var(--tg-theme-bg-color, #f4f4f5);
-      color: var(--tg-theme-text-color, #111827);
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
     }
-    h1 { font-size: 1.25rem; margin-top: 0; }
-    .grid { display: flex; flex-direction: column; gap: 12px; }
-    .card {
-      background: var(--tg-theme-secondary-bg-color, #ffffff);
-      border-radius: 12px;
-      padding: 14px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 16px 14px 100px 14px;
+      overflow-x: hidden;
     }
-    .title { font-weight: 600; font-size: 1rem; margin-bottom: 4px; }
-    .desc { font-size: 0.85rem; color: #6b7280; margin-bottom: 10px; }
-    .row { display: flex; justify-content: space-between; align-items: center; }
-    .price { font-weight: bold; font-size: 1.1rem; }
-    button {
-      background: var(--tg-theme-button-color, #2563eb);
-      color: var(--tg-theme-button-text-color, #ffffff);
-      border: none;
-      padding: 8px 16px;
-      border-radius: 8px;
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: #fff;
+      box-shadow: 0 4px 14px var(--accent-glow);
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-subtitle {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .cart-indicator {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Category Filter Chips */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 14px;
+      margin-bottom: 14px;
+      scrollbar-width: none;
+    }
+    .filter-bar::-webkit-scrollbar { display: none; }
+
+    .filter-chip {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 0.8rem;
       font-weight: 600;
+      white-space: nowrap;
       cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .filter-chip.active {
+      background: var(--accent);
+      color: #0f172a;
+      border-color: var(--accent);
+      font-weight: 700;
+      box-shadow: 0 4px 12px var(--accent-glow);
+      transform: translateY(-1px);
+    }
+
+    /* Product Grid */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 340px) {
+      .product-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Product Card */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      animation: fadeInUp 0.4s ease-out backwards;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+    }
+
+    .card:active {
+      transform: scale(0.98);
+    }
+
+    .image-wrapper {
+      position: relative;
+      width: 100%;
+      padding-top: 80%;
+      background: #020617;
+      overflow: hidden;
+    }
+
+    .image-wrapper img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .card:hover .image-wrapper img {
+      transform: scale(1.05);
+    }
+
+    .category-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border-color);
+      color: var(--accent);
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+    }
+
+    .card-body {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      justify-content: space-between;
+    }
+
+    .product-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      line-height: 1.3;
+      margin-bottom: 4px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .product-specs {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .price {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    /* Buttons & Quantity */
+    .add-btn {
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .add-btn:active {
+      transform: scale(0.92);
+    }
+
+    .qty-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 3px;
+    }
+
+    .qty-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      border: none;
+      background: var(--card-bg);
+      color: var(--text-main);
+      font-weight: 800;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease;
+    }
+
+    .qty-btn:active {
+      background: var(--accent);
+      color: #0f172a;
+    }
+
+    .qty-number {
+      font-size: 0.85rem;
+      font-weight: 700;
+      min-width: 16px;
+      text-align: center;
+    }
+
+    /* Keyframes */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
   </style>
 </head>
 <body>
-  <h1>CamboKB Store</h1>
-  <div class="grid" id="catalog"></div>
+  <header>
+    <div class="brand">
+      <div class="brand-logo">CK</div>
+      <div>
+        <div class="brand-title">CamboKB</div>
+        <div class="brand-subtitle">Custom Tech Gear</div>
+      </div>
+    </div>
+    <div class="cart-indicator">
+      🛒 <span id="cartCount">0</span>
+    </div>
+  </header>
+
+  <div class="filter-bar">
+    <button class="filter-chip active" onclick="filterCategory('all', this)">All Gear</button>
+    <button class="filter-chip" onclick="filterCategory('keyboard', this)">Keyboards</button>
+    <button class="filter-chip" onclick="filterCategory('mouse', this)">Mice</button>
+    <button class="filter-chip" onclick="filterCategory('deskmat', this)">Mousepads</button>
+    <button class="filter-chip" onclick="filterCategory('accessories', this)">Accessories</button>
+  </div>
+
+  <div class="product-grid" id="productGrid"></div>
 
   <script>
     const tg = window.Telegram?.WebApp;
@@ -47,37 +333,173 @@
       tg.expand();
     }
 
-    const items = [
-      { id: 1, name: "Mechanical Gaming Keyboard", price: 89, desc: "Hot-swappable, RGB Backlit, Linear Red Switches" },
-      { id: 2, name: "Custom Coiled Aviator Cable", price: 25, desc: "Type-C, Braided Nylon, Gold-Plated" },
-      { id: 3, name: "Wireless ANC Headphones", price: 149, desc: "Bluetooth 5.3, 40h Battery life" }
+    const products = [
+      {
+        id: 1,
+        name: "Cambo Pro 75% Wireless",
+        category: "keyboard",
+        price: 119,
+        specs: "Gasket Mount, CNC Knob, RGB",
+        image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500&auto=format&fit=crop&q=80"
+      },
+      {
+        id: 2,
+        name: "Aero 49g Wireless Mouse",
+        category: "mouse",
+        price: 69,
+        specs: "PAW3395 Sensor, 4K Polling",
+        image: "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=500&auto=format&fit=crop&q=80"
+      },
+      {
+        id: 3,
+        name: "Speed Mat XL (900x400)",
+        category: "deskmat",
+        price: 26,
+        specs: "Micro-woven cloth, 4mm thick",
+        image: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=500&auto=format&fit=crop&q=80"
+      },
+      {
+        id: 4,
+        name: "Cyber Aviator Cable",
+        category: "accessories",
+        price: 24,
+        specs: "GX16 Detachable, Paracord",
+        image: "https://images.unsplash.com/photo-1544652478-6653e09f18a2?w=500&auto=format&fit=crop&q=80"
+      },
+      {
+        id: 5,
+        name: "Retro PBT Keycaps Set",
+        category: "accessories",
+        price: 42,
+        specs: "Cherry profile, 142 keys, Dye-sub",
+        image: "https://images.unsplash.com/photo-1595225476474-87563907a212?w=500&auto=format&fit=crop&q=80"
+      },
+      {
+        id: 6,
+        name: "Cambo 65% Aluminum Kit",
+        category: "keyboard",
+        price: 145,
+        specs: "Anodized Case, Hot-swap PCB",
+        image: "https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?w=500&auto=format&fit=crop&q=80"
+      }
     ];
 
-    let cartTotal = 0;
-    const catalog = document.getElementById("catalog");
+    // State
+    const cart = {};
+    let activeFilter = 'all';
 
-    items.forEach(product => {
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `
-        <div class="title">${product.name}</div>
-        <div class="desc">${product.desc}</div>
-        <div class="row">
-          <span class="price">$${product.price}</span>
-          <button onclick="addToCart(${product.price})">Add</button>
-        </div>
-      `;
-      catalog.appendChild(card);
-    });
+    function renderProducts() {
+      const grid = document.getElementById('productGrid');
+      grid.innerHTML = '';
 
-    function addToCart(price) {
-      cartTotal += price;
+      const filtered = activeFilter === 'all' 
+        ? products 
+        : products.filter(p => p.category === activeFilter);
+
+      filtered.forEach((item, index) => {
+        const qty = cart[item.id] || 0;
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.animationDelay = `${index * 0.05}s`;
+
+        card.innerHTML = `
+          <div class="image-wrapper">
+            <span class="category-badge">${item.category}</span>
+            <img src="${item.image}" alt="${item.name}" loading="lazy" />
+          </div>
+          <div class="card-body">
+            <div>
+              <div class="product-title">${item.name}</div>
+              <div class="product-specs">${item.specs}</div>
+            </div>
+            <div class="card-footer">
+              <div class="price">$${item.price}</div>
+              <div id="action-${item.id}">
+                ${qty === 0 ? `
+                  <button class="add-btn" onclick="updateQty(${item.id}, 1)">
+                    + Add
+                  </button>
+                ` : `
+                  <div class="qty-controls">
+                    <button class="qty-btn" onclick="updateQty(${item.id}, -1)">−</button>
+                    <span class="qty-number">${qty}</span>
+                    <button class="qty-btn" onclick="updateQty(${item.id}, 1)">+</button>
+                  </div>
+                `}
+              </div>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function updateQty(id, delta) {
+      const current = cart[id] || 0;
+      const next = current + delta;
+
+      if (next <= 0) {
+        delete cart[id];
+      } else {
+        cart[id] = next;
+      }
+
+      tg?.HapticFeedback?.impactOccurred(delta > 0 ? "medium" : "light");
+      updateCartDisplay();
+      renderProducts();
+    }
+
+    function updateCartDisplay() {
+      let totalCount = 0;
+      let totalPrice = 0;
+
+      for (const [id, count] of Object.entries(cart)) {
+        const prod = products.find(p => p.id === parseInt(id));
+        if (prod) {
+          totalCount += count;
+          totalPrice += prod.price * count;
+        }
+      }
+
+      document.getElementById('cartCount').textContent = totalCount;
+
+      // Handle Telegram Native MainButton
       if (tg && tg.MainButton) {
-        tg.MainButton.setText(`Checkout ($${cartTotal})`);
-        tg.MainButton.show();
-        tg.HapticFeedback?.impactOccurred("light");
+        if (totalCount > 0) {
+          tg.MainButton.setText(`Checkout (${totalCount}) • $${totalPrice}`);
+          tg.MainButton.show();
+          tg.MainButton.onClick(handleTelegramCheckout);
+        } else {
+          tg.MainButton.hide();
+        }
       }
     }
+
+    function handleTelegramCheckout() {
+      const summary = [];
+      let total = 0;
+
+      for (const [id, count] of Object.entries(cart)) {
+        const prod = products.find(p => p.id === parseInt(id));
+        if (prod) {
+          summary.push({ name: prod.name, count, price: prod.price * count });
+          total += prod.price * count;
+        }
+      }
+
+      tg?.sendData(JSON.stringify({ items: summary, total }));
+    }
+
+    function filterCategory(cat, el) {
+      activeFilter = cat;
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      tg?.HapticFeedback?.selectionChanged();
+      renderProducts();
+    }
+
+    // Initial render
+    renderProducts();
   </script>
 </body>
 </html>
